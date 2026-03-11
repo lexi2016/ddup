@@ -37,7 +37,7 @@ def create_snapshot():
     """创建系统快照"""
     try:
         result = subprocess.run(
-            "openclaw status", shell=True, capture_output=True, text=True, timeout=30
+            "openclaw status", shell=True, capture_output=True, text=True, timeout=30, encoding='utf-8', errors='ignore'
         )
         status = {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
     except Exception as e:
