@@ -1,14 +1,21 @@
 ---
 name: ddup
 description: |
-  码姐自我进化系统。为OpenClaw智能体提供自动学习、记忆管理、系统快照、备份还原、安全检查等能力。
+  OpenClaw Agent Management Toolkit. Provides automatic learning, memory management, system snapshots, backup/restore, and security checking for OpenClaw agents.
   
-  触发场景：
-  - "每天自动备份"
-  - "查看系统状态"
-  - "执行Heartbeat任务"
-  - "检查配置文件安全"
-  - "管理记忆文档"
+  为OpenClaw智能体打造的管理工具集，提供自动学习、记忆管理、系统快照、备份还原、安全检查等能力。
+  
+  触发场景（精确匹配）：
+  - "每天自动备份" / "自动备份"
+  - "查看系统状态" / "系统状态"
+  - "执行Heartbeat" / "运行Heartbeat" / "Heartbeat任务"
+  - "检查配置文件安全" / "安全检查"
+  - "管理记忆" / "查看记忆" / "记忆管理"
+  
+  排除场景（不应触发）：
+  - "备份数据库" / "备份文件" → 应触发其他备份skill
+  - "查看股票状态" → 应触发股票skill
+  - "发送邮件" → 应触发邮件skill
 metadata:
   requires:
     bins: [python]
@@ -18,11 +25,11 @@ metadata:
         git clone https://github.com/lexi2016/ddup.git ~/.openclaw/skills/ddup
 ---
 
-# ddup 码姐自我进化系统
+# ddup - OpenClaw Agent Management Toolkit
 
 ## 概述
 
-为OpenClaw智能体打造的自我进化系统，让AI能够：
+OpenClaw智能体管理工具，让AI能够：
 - 📸 定期记录系统状态
 - 🧠 自动管理长期记忆
 - 💾 自动备份重要配置
