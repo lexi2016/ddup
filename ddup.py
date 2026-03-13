@@ -1,222 +1,211 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-DDUP1.0 - 多智能体协作平台
-核心逻辑模块
+ddup CLI 入口
+使用方法:
+    python ddup.py run        # 执行Heartbeat
+    python ddup.py snapshot   # 创建快照
+    python ddup.py backup     # 备份
+    python ddup.py security   # 安全检查
+    python ddup.py memory      # 查看记忆
+    python ddup.py status     # 存储状态
 """
 
+import sys
+import os
 import json
-import uuid
+import subprocess
+import shutil
 from datetime import datetime
-from pathlib import Path
-from typing import List, Dict, Optional
 
-# ============== 配置 ==============
+# 设置UTF-8输出
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-# 预置团队模板
-TEAM_TEMPLATES = {
-    "短视频团队": {
-        "description": "短视频制作团队，包含编导、拍摄、剪辑三个角色",
-        "agents": [
-            {"role": "编导", "task": "创作短视频脚本", "skills": ["文案创作", "故事构思"]},
-            {"role": "拍摄", "task": "负责内容拍摄", "skills": ["拍摄技巧", "场景选择"]},
-            {"role": "剪辑", "task": "后期制作", "skills": ["视频剪辑", "特效处理"]}
-        ]
-    },
-    "数据分析团队": {
-        "description": "数据分析团队，包含数据收集、分析、报告三个角色",
-        "agents": [
-            {"role": "数据收集", "task": "获取相关数据", "skills": ["网络搜索", "数据获取"]},
-            {"role": "数据分析", "task": "分析数据并得出结论", "skills": ["统计分析", "数据可视化"]},
-            {"role": "报告生成", "task": "生成分析报告", "skills": ["文档撰写", "报告排版"]}
-        ]
-    },
-    "产品发布团队": {
-        "description": "产品发布团队，包含市场调研、文案、运营三个角色",
-        "agents": [
-            {"role": "市场调研", "task": "调研市场需求", "skills": ["市场分析", "竞品分析"]},
-            {"role": "文案撰写", "task": "撰写推广文案", "skills": ["文案创作", "内容策划"]},
-            {"role": "社交运营", "task": "社交媒体运营", "skills": ["运营推广", "粉丝互动"]}
-        ]
-    }
-}
+# 项目根目录
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
-# 共享记忆目录
-MEMORY_DIR = Path.home() / ".openclaw" / "shared_memory" / "ddup"
+def get_date():
+    return datetime.now().strftime("%Y-%m-%d")
 
+def get_timestamp():
+    return datetime.now().isoformat()
 
-class DDUPTeam:
-    """DDUP团队类"""
-    
-    def __init__(self, team_id: str, name: str, agents: List[Dict]):
-        self.team_id = team_id
-        self.name = name
-        self.agents = agents
-        self.created_at = datetime.now().isoformat()
-        self.tasks = []
-        self.results = {}
-    
-    def to_dict(self) -> Dict:
-        return {
-            "team_id": self.team_id,
-            "name": self.name,
-            "agents": self.agents,
-            "created_at": self.created_at,
-            "tasks": self.tasks,
-            "results": self.results
-        }
-
-
-class DDUP:
-    """DDUP主控制器"""
-    
-    def __init__(self):
-        self.teams: Dict[str, DDUPTeam] = {}
-        self._init_memory_dir()
-    
-    def _init_memory_dir(self):
-        """初始化记忆目录"""
-        MEMORY_DIR.mkdir(parents=True, exist_ok=True)
-    
-    def list_templates(self) -> List[str]:
-        """列出可用模板"""
-        return list(TEAM_TEMPLATES.keys())
-    
-    def create_team_from_template(self, template_name: str) -> DDUPTeam:
-        """从模板创建团队"""
-        if template_name not in TEAM_TEMPLATES:
-            raise ValueError(f"模板不存在: {template_name}")
-        
-        template = TEAM_TEMPLATES[template_name]
-        team_id = str(uuid.uuid4())[:8]
-        
-        team = DDUPTeam(
-            team_id=team_id,
-            name=template_name,
-            agents=template["agents"]
+# ===== snapshot =====
+def create_snapshot():
+    """创建系统快照"""
+    try:
+        result = subprocess.run(
+            "openclaw status", shell=True, capture_output=True, text=True, timeout=30, encoding='utf-8', errors='ignore'
         )
-        
-        self.teams[team_id] = team
-        self._save_team(team)
-        
-        return team
+        status = {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+    except Exception as e:
+        status = {"error": str(e)}
     
-    def create_custom_team(self, user_request: str) -> DDUPTeam:
-        """根据用户需求创建自定义团队"""
-        # 简化版：直接返回默认团队
-        # 实际实现中，这里需要用LLM解析用户需求
-        team_id = str(uuid.uuid4())[:8]
-        
-        # 默认创建一个基础团队
-        agents = [
-            {"role": "Agent-1", "task": "处理任务第一部分", "skills": ["通用"]},
-            {"role": "Agent-2", "task": "处理任务第二部分", "skills": ["通用"]}
-        ]
-        
-        team = DDUPTeam(
-            team_id=team_id,
-            name="自定义团队",
-            agents=agents
-        )
-        
-        self.teams[team_id] = team
-        self._save_team(team)
-        
-        return team
+    timestamp = get_timestamp()
+    date = get_date()
     
-    def execute_task(self, team_id: str, main_task: str) -> Dict:
-        """执行团队任务"""
-        if team_id not in self.teams:
-            raise ValueError(f"团队不存在: {team_id}")
-        
-        team = self.teams[team_id]
-        
-        # 记录任务
-        team.tasks.append({
-            "task": main_task,
-            "status": "completed",
-            "completed_at": datetime.now().isoformat()
-        })
-        
-        # 模拟任务执行结果
-        results = {}
-        for i, agent in enumerate(team.agents):
-            results[agent["role"]] = f"已完成：{agent['task']}"
-        
-        team.results = results
-        self._save_team(team)
-        
-        return results
+    snapshot_data = {"timestamp": timestamp, "date": date, "openclaw_status": status}
     
-    def aggregate_results(self, team_id: str) -> str:
-        """汇总结果"""
-        if team_id not in self.teams:
-            raise ValueError(f"团队不存在: {team_id}")
-        
-        team = self.teams[team_id]
-        
-        if not team.results:
-            return "暂无结果"
-        
-        # 汇总各Agent结果
-        report = f"# {team.name} - 任务执行报告\n\n"
-        report += f"**团队ID**: {team.team_id}\n"
-        report += f"**创建时间**: {team.created_at}\n\n"
-        report += "## 执行结果\n\n"
-        
-        for role, result in team.results.items():
-            report += f"### {role}\n{result}\n\n"
-        
-        return report
+    snapshot_file = os.path.join(ROOT, "snapshots", f"{date}.json")
     
-    def _save_team(self, team: DDUPTeam):
-        """保存团队信息到记忆目录"""
-        team_dir = MEMORY_DIR / f"team-{team.team_id}"
-        team_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 保存团队信息
-        with open(team_dir / "team.json", "w", encoding="utf-8") as f:
-            json.dump(team.to_dict(), f, ensure_ascii=False, indent=2)
-        
-        # 保存上下文
-        context_file = team_dir / "context.md"
-        if not context_file.exists():
-            context_file.write_text(f"# {team.name}\n\n创建时间：{team.created_at}\n\n", encoding="utf-8")
+    existing = []
+    if os.path.exists(snapshot_file):
+        with open(snapshot_file, 'r', encoding='utf-8') as f:
+            existing = json.load(f)
     
-    def get_team_info(self, team_id: str) -> Optional[Dict]:
-        """获取团队信息"""
-        if team_id not in self.teams:
-            return None
-        return self.teams[team_id].to_dict()
+    existing.append(snapshot_data)
+    
+    with open(snapshot_file, 'w', encoding='utf-8') as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+    
+    return snapshot_data
 
+# ===== backup =====
+def backup_workspace():
+    """备份工作空间"""
+    date = get_date()
+    timestamp = datetime.now().strftime("%H%M%S")
+    backup_name = f"{date}_{timestamp}"
+    backup_dir = os.path.join(ROOT, "backups", backup_name)
+    
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    workspace = os.path.dirname(ROOT)
+    config_files = ["SOUL.md", "AGENTS.md", "MEMORY.md", "TOOLS.md"]
+    
+    for config_file in config_files:
+        src = os.path.join(workspace, config_file)
+        if os.path.exists(src):
+            dst = os.path.join(backup_dir, config_file)
+            shutil.copy2(src, dst)
+    
+    meta = {"backup_name": backup_name, "date": date, "timestamp": timestamp, "files": config_files}
+    meta_file = os.path.join(backup_dir, "meta.json")
+    with open(meta_file, 'w', encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+    
+    return backup_name
 
-# ============== 主函数 ==============
+def list_backups():
+    backup_dir = os.path.join(ROOT, "backups")
+    if not os.path.exists(backup_dir):
+        return []
+    
+    backups = []
+    for name in os.listdir(backup_dir):
+        path = os.path.join(backup_dir, name)
+        if os.path.isdir(path):
+            backups.append(name)
+    return sorted(backups, reverse=True)
 
+# ===== security =====
+def security_check():
+    workspace = os.path.dirname(ROOT)
+    core_files = ["SOUL.md", "AGENTS.md", "MEMORY.md", "TOOLS.md"]
+    
+    result = {"timestamp": get_timestamp(), "passed": True, "missing_files": [], "suspicious": []}
+    
+    for filename in core_files:
+        filepath = os.path.join(workspace, filename)
+        if not os.path.exists(filepath):
+            result["missing_files"].append(filename)
+            result["passed"] = False
+    
+    return result
+
+# ===== memory =====
+def get_memory_list():
+    files = []
+    for f in os.listdir(ROOT):
+        if f.endswith('.md') and f[0].isdigit():
+            files.append(f)
+    return sorted(files, reverse=True)
+
+# ===== storage =====
+def get_storage_info():
+    total_size = 0
+    file_count = 0
+    for root, dirs, files in os.walk(ROOT):
+        for f in files:
+            fp = os.path.join(root, f)
+            total_size += os.path.getsize(fp)
+            file_count += 1
+    return {"total_size": total_size, "file_count": file_count}
+
+# ===== heartbeat =====
+def run_heartbeat():
+    """执行Heartbeat任务"""
+    results = {"tasks": [], "success": True}
+    
+    # 1. 快照
+    try:
+        snap = create_snapshot()
+        results["tasks"].append({"name": "snapshot", "status": "success", "timestamp": snap.get("timestamp")})
+    except Exception as e:
+        results["tasks"].append({"name": "snapshot", "status": "error", "error": str(e)})
+        results["success"] = False
+    
+    # 2. 安全检查
+    try:
+        sec = security_check()
+        results["tasks"].append({"name": "security", "status": "success" if sec["passed"] else "warning", "passed": sec["passed"]})
+    except Exception as e:
+        results["tasks"].append({"name": "security", "status": "error", "error": str(e)})
+        results["success"] = False
+    
+    return results
+
+# ===== main =====
 def main():
-    """测试入口"""
-    ddup = DDUP()
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return
     
-    # 列出模板
-    print("=== 可用模板 ===")
-    for template in ddup.list_templates():
-        print(f"- {template}")
+    cmd = sys.argv[1].lower()
     
-    # 创建团队
-    print("\n=== 创建团队 ===")
-    team = ddup.create_team_from_template("数据分析团队")
-    print(f"团队ID: {team.team_id}")
-    print(f"团队名: {team.name}")
-    print(f"成员: {[a['role'] for a in team.agents]}")
-    
-    # 执行任务
-    print("\n=== 执行任务 ===")
-    results = ddup.execute_task(team.team_id, "分析宁德时代投资价值")
-    print(results)
-    
-    # 汇总结果
-    print("\n=== 汇总结果 ===")
-    report = ddup.aggregate_results(team.team_id)
-    print(report)
-
+    if cmd == "run":
+        print("🔄 执行Heartbeat任务...")
+        result = run_heartbeat()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        
+    elif cmd == "snapshot":
+        print("📸 创建系统快照...")
+        result = create_snapshot()
+        print(f"✅ 快照已创建: {result.get('timestamp')}")
+        
+    elif cmd == "backup":
+        print("💾 执行备份...")
+        result = backup_workspace()
+        print(f"✅ 备份完成: {result}")
+        
+    elif cmd == "list-backups":
+        print("📋 备份列表:")
+        for b in list_backups():
+            print(f"  - {b}")
+        
+    elif cmd == "security":
+        print("🔒 执行安全检查...")
+        result = security_check()
+        print(f"✅ 检查完成，通过: {result.get('passed')}")
+        if result.get('missing_files'):
+            print(f"⚠️ 缺失文件: {result['missing_files']}")
+            
+    elif cmd == "memory":
+        print("🧠 记忆列表:")
+        for f in get_memory_list():
+            print(f"  - {f}")
+            
+    elif cmd == "status":
+        print("📊 存储状态:")
+        info = get_storage_info()
+        print(f"  文件数: {info['file_count']}")
+        print(f"  总大小: {info['total_size']} bytes")
+        
+    else:
+        print(f"未知命令: {cmd}")
+        print(__doc__)
 
 if __name__ == "__main__":
     main()

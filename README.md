@@ -1,106 +1,101 @@
-# DDUP1.0 - 多智能体协作平台
+# ddup - OpenClaw Agent Management Toolkit
 
-> 一个指令，一个团队
+English | [中文](#中文)
 
-## 简介
+## Overview
 
-DDUP1.0（多智能体协作平台）让用户用自然语言指令快速创建可协作的AI团队。
+A comprehensive management toolkit for OpenClaw AI agents, providing:
 
-## 特性
+- 📸 Regular system status snapshots
+- 🧠 Automatic long-term memory management  
+- 💾 Automatic backup of important configurations
+- 🔒 Security checking of core files
+- 🌙 Automatic learning and evolution during midnight
 
-- 🎯 **自然语言创建团队** - 一句话创建多Agent协作团队
-- 🤖 **智能任务分发** - 自动拆分任务给合适的Agent
-- 📊 **结果自动汇总** - 聚合各Agent输出为统一报告
-- 📦 **预置团队模板** - 短视频、数据分析、产品发布团队
-
-## 安装
+## Quick Start
 
 ```bash
-# 克隆仓库
-git clone https://github.com/lexi2016/ddup.git
-cd ddup
+# Clone the repository
+git clone https://github.com/lexi2016/ddup.git ~/.openclaw/skills/ddup
 
-# 或使用Gitee
-git clone https://gitee.com/lexi2016/ddup.git
+# Run all tasks
+cd ~/.openclaw/skills/ddup
+python ddup.py run
 ```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `python ddup.py run` | Execute all incremental tasks |
+| `python ddup.py snapshot` | Create system snapshot |
+| `python ddup.py backup` | Backup configuration files |
+| `python ddup.py security` | Run security check |
+| `python dddd.py status` | View storage status |
+
+## Features
+
+### System Snapshot
+Automatically records OpenClaw agent status, including runtime information, active sessions, and system health.
+
+### Memory Management  
+Manages long-term memory across sessions, enabling persistent knowledge retention.
+
+### Auto Backup
+Automatically backs up critical configuration files (SOUL.md, AGENTS.md, TOOLS.md, etc.).
+
+### Security Check
+Validates integrity of core configuration files and detects suspicious modifications.
+
+---
+
+## 中文
+
+## 概述
+
+OpenClaw智能体管理工具，为AI智能体提供：
+
+- 📸 定期记录系统状态
+- 🧠 自动管理长期记忆
+- 💾 自动备份重要配置
+- 🔒 安全检查核心文件
+- 🌙 凌晨自动学习进化
 
 ## 快速开始
 
-```python
-from ddup import DDUP
+```bash
+# 克隆仓库
+git clone https://github.com/lexi2016/ddup.git ~/.openclaw/skills/ddup
 
-# 创建DDUP实例
-ddup = DDUP()
-
-# 查看可用模板
-print(ddup.list_templates())
-# ['短视频团队', '数据分析团队', '产品发布团队']
-
-# 从模板创建团队
-team = ddup.create_team_from_template("数据分析团队")
-
-# 执行任务
-results = ddup.execute_task(team.team_id, "分析宁德时代投资价值")
-
-# 汇总结果
-report = ddup.aggregate_results(team.team_id)
-print(report)
+# 运行所有任务
+cd ~/.openclaw/skills/ddup
+python ddup.py run
 ```
 
-## 使用示例
+## 命令
 
-### 场景1：创建短视频团队
+| 命令 | 描述 |
+|------|------|
+| `python ddup.py run` | 执行所有增量任务 |
+| `python ddup.py snapshot` | 创建系统快照 |
+| `python ddup.py backup` | 备份配置文件 |
+| `python ddup.py security` | 运行安全检查 |
+| `python ddup.py status` | 查看存储状态 |
 
-```
-用户：帮我创建一个短视频团队
+## 功能说明
 
-DDUP：
-✓ 已创建"短视频团队"
-├── 编导Agent - 负责脚本创作
-├── 拍摄Agent - 负责内容拍摄
-└── 剪辑Agent - 负责后期制作
-```
+### 系统快照
+自动记录OpenClaw智能体状态，包括运行时信息、活动会话、系统健康状况。
 
-### 场景2：数据分析
+### 记忆管理
+管理跨会话的长期记忆，实现持久化知识保留。
 
-```
-用户：分析宁德时代投资价值
+### 自动备份
+自动备份关键配置文件（SOUL.md、AGENTS.md、TOOLS.md等）。
 
-DDUP：
-✓ 已创建"数据分析团队"
-├── 数据收集Agent - 获取财报、研报数据
-├── 数据分析Agent - 分析财务指标、行业趋势
-└── 报告生成Agent - 生成投资分析报告
-```
+### 安全检查
+验证核心配置文件的完整性，检测可疑修改。
 
-## 项目结构
-
-```
-ddup/
-├── ddup.py              # 核心逻辑
-├── SKILL.md             # Skill定义
-├── README.md            # 使用说明
-├── 技术方案.md          # 技术文档
-└── config/
-    └── templates/       # 预置模板
-```
-
-## 技术架构
-
-- **主Agent** - 负责意图理解、任务分发、结果汇总
-- **子Agent** - 通过sessions_spawn创建执行子任务
-- **记忆存储** - 共享memory目录存储上下文
-
-详见 [技术方案.md](技术方案.md)
-
-## 版本
-
-- v1.0 (2026-03-13) - MVP版本
-
-## 贡献
-
-欢迎提交Issue和PR！
-
-## 许可证
+## License
 
 MIT License
